@@ -38,3 +38,7 @@ the vector, and then project this vector to unit a unit sphere (-> unit length v
 repeat this process until convergence.
 4. We have now found the unit vectors corresponding to the original signals in the data. At this
 point we simply project the data on both vectors separately bringing us the original signals.
+
+
+The sound files are originally from some researchers at Aalto University, if I remember correctly.
+I could not find the source anymore.
