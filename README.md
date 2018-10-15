@@ -30,12 +30,11 @@ system. By dividing each variable with its corresponding variance, we will actua
 mean and the variance. This process is simply called "whitening."
 3. The central limit theorem roughly states that a combination of two random variables will be
 more gaussian than either random variable alone. We utilize this property to find the original
-signals using numerical gradient descent:
+signals using gradient descent:
 3.1 We use kurtosis (a.k.a the fourth moment) as measure of non-gaussianity. We estimate kurtosis
 of our data on some unit vector (randomly initialized).
-3.2 We further estimate the kurtosis for a unit vector that is "close" to the first one in the sense
-that the angle between this unit vector and the unit vector in 3.1 is small. If the kurtosis for
-the unit vector in 3.2 is better than in 3.1, we use this vector as the new baseline and continue
-until we converge.
+3.2 We next estimate the gradient at this point, add the gradient times the learning rate to
+the vector, and then project this vector to unit a unit sphere (-> unit length vector). We
+repeat this process until convergence.
 4. We have now found the unit vectors corresponding to the original signals in the data. At this
 point we simply project the data on both vectors separately bringing us the original signals.

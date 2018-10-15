@@ -1,13 +1,77 @@
-## This is the cocktail-party algorithm!
+## This file contains the cocktail-party algorithm!
+## Just source the file and run 'run_test()'. You might
+## need to find a player suitable for your platform.
+
+SOUND_FILE_1 = "./partysound/mix1.wav"
+SOUND_FILE_2 = "./partysound/mix2.wav"
+WAV_PLAYER = '/usr/bin/afplay'
+VISUALIZATION_FILE = './cocktailParty.png'
+
+
+run_test <- function(){
+	## Install if needed!
+	library(tuneR)
+	
+	#############
+	## LOAD FILES
+	#############
+	a <- readWave(filename=SOUND_FILE_1)
+	b <- readWave(SOUND_FILE_2)
+	## Should data be centralized?
+	z <- cbind(a@left, b@left) ## Sound in raw number format?
+	
+	r <- cocktail_party(z)
+	plot(z, col="#FF000020", pch=16)
+	c <- cbind(as.numeric(z%*%r)*r[1, ], as.numeric(z%*%r)*r[2, ])
+	points(c, col="#0000FF20", pch=16)
+	arrows(z[, 1], z[, 2], c[, 1], c[, 2], col="#00000010", code=0)
+	
+	phi=pi/2
+	rot <- matrix(c(cos(phi), -sin(phi), sin(phi), cos(phi)),nrow=2, ncol=2 )
+	channel1 <- z%*%r ## Separate sources
+	channel2 <- z%*%rot%*%r
+	
+	w1 <- Wave(left=channel1, samp.rate=8000, bit=8)
+	w1 <- normalize(w1, unit='8')
+	w2 <- Wave(left=channel2, samp.rate=8000, bit=8)
+	w2 <- normalize(w2, unit='8')
+	
+	######################
+	## SET SUITABLE PLAYER
+	######################
+	setWavPlayer(WAV_PLAYER) ## Suitable player on mac
+	print("Recording 1 now playing")
+	play(a)
+	print("Recording 2 now playing")
+	play(b)
+	print("Estimated original source 1 now playing")
+	play(w1)
+	print("Estimated original source 2 now playing")
+	play(w2)
+	
+	
+	# Plot awesome image of transformation
+	print("Storing visualization.")
+	png(VISUALIZATION_FILE, width=800, height=800)
+	plot(z, col="#FF000090", pch=16)
+	c <- cbind(as.numeric(z%*%r)*r[1, ], as.numeric(z%*%r)*r[2, ])
+	points(c, col="#0000FF90", pch=16)
+	arrows(z[, 1], z[, 2], c[, 1], c[, 2], col="#00000060", code=0)
+	dev.off()
+
+}
+
 
 kurtosis <- function(input){
 	## Input obviously Nx1
 	## kurtosis is E(x^4) - 3(E(x^2))^2
 	## 1. Center data
 	input <- input - mean(input)
+	# Formula for kurtosis :)
 	kurt <- 1/dim(input)[1]*sum(input^4) - 3*(1/dim(input)[1]*sum(input^2))^2
 	return(kurt)
 }
+
 
 whiten <- function(data){
 	## Assuming samples in rows
@@ -31,8 +95,8 @@ whiten <- function(data){
 }
 
 
-cocktailParty <- function(input, mu=0.001, convergence=1e-10){ ## Could also be called simply ICA...
-	## No assumptions on # of independent components or input dims =)
+cocktail_party <- function(input, mu=0.001, convergence=1e-10){ ## Could also be called simply ICA...
+	## No assumptions on #independent components or input dims
 	## mu is step-size for gradient descent
 	## This only finds one local optimum. In a 2-d case, the other one is 
 	## perpendicular to the found one...
@@ -77,67 +141,6 @@ cocktailParty <- function(input, mu=0.001, convergence=1e-10){ ## Could also be 
 	## We could repeat the process for a number of random starting points w
 	## until we find dim(input)[2] different w's that converge
 }
-
-
-
-
-
-## tuneR()
-library(tuneR)
-
-############
-## SET FILES
-############
-a <- readWave(filename="./partysound/mix1.wav")
-b <- readWave("./partysound/mix2.wav")
-## Should data be centralized?
-z <- cbind(a@left, b@left) ## Sound in raw number format?
-# Is this right? 'a' is numeric whereas 'z' contains integers...
-
-r <- cocktailParty(z)
-plot(z, col="#FF000020", pch=16)
-c <- cbind(as.numeric(z%*%r)*r[1, ], as.numeric(z%*%r)*r[2, ])
-points(c, col="#0000FF20", pch=16)
-arrows(z[, 1], z[, 2], c[, 1], c[, 2], col="#00000010", code=0)
-
-phi=pi/2
-rot <- matrix(c(cos(phi), -sin(phi), sin(phi), cos(phi)),nrow=2, ncol=2 )
-channel1 <- z%*%r ## Separate sources
-channel2 <- z%*%rot%*%r
-
-w1 <- Wave(left=channel1, samp.rate=8000, bit=8)
-w1 <- normalize(w1, unit='8')
-w2 <- Wave(left=channel2, samp.rate=8000, bit=8)
-w2 <- normalize(w2, unit='8')
-
-######################
-## SET SUITABLE PLAYER
-######################
-setWavPlayer('/usr/bin/afplay') ## Suitable player on mac
-play(a)
-play(b)
-play(w1)
-play(w2)
-
-
-## Dynaaminen versio jossa äänilähdettä seurataan. Uusi (t=2) "random" aloitus
-## gradient descent algoritmille on edellinen löydetty suunta jne. 
-## Voisi seurata kävelijää kaupassa - kävelytyyli kuulostaa yksilölliseltä.
-## Voi kuunnella musiikkia samaan aikaan kun skypettää tms (puhelinkeskus)
-## Puhelinpalvelussa voi paremmin erotella yksittäisen äänen vaikka siellä
-## olisi jatkuvaa sorinaa.
-## Jos meillä on puhechatti, pystymme tunnistamaan cookien/kävijän äänen. Jos 
-## sama kävijä tämän jälkeen astuu kauppaan jossa on meidän mikkijärjestelmä (tms)
-## pystymme yhdistämään tämän onlinekaupan cookieen.
-## Pystymme myös äänen avulla yhdistämään saman kävijän useamman laitteen yli.
-
-png("./cocktailParty.png", width=800, height=800)
-plot(z, col="#FF000090", pch=16)
-c <- cbind(as.numeric(z%*%r)*r[1, ], as.numeric(z%*%r)*r[2, ])
-points(c, col="#0000FF90", pch=16)
-arrows(z[, 1], z[, 2], c[, 1], c[, 2], col="#00000060", code=0)
-dev.off()
-
 
 
 
